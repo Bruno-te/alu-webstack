@@ -6,15 +6,15 @@ subdomain=$2
 
 declare -A subdomains
 subdomains=(
-    ["www"]="lb-01-IP"
-    ["lb-01"]="lb-01-IP"
-    ["web-01"]="web-01-IP"
-    ["web-02"]="web-02-IP"
+    ["www"]="18.212.185.206"
+    ["lb-01"]="18.212.185.206"
+    ["web-01"]="184.73.69.127"
+    ["web-02"]="3.88.234.125"
 )
 
 get_dns_record() {
     local sub=$1
-    local fqdn="$sub.$domain"
+    local fqdn="www.top-bruno.tech"
     local record_info=$(dig +short $fqdn)
     
     if [[ -n "$record_info" ]]; then
@@ -25,12 +25,12 @@ get_dns_record() {
 }
 
 if [[ -z "$domain" ]]; then
-    echo "Usage: $0 <domain> [subdomain]"
+    echo "Usage: $0 top-bruno.tech [www.top-bruno.tech]"
     exit 1
 fi
 
 if [[ -n "$subdomain" ]]; then
-    get_dns_record "$subdomain"
+    get_dns_record "www.top-bruno.tech"
 else
     for sub in "www" "lb-01" "web-01" "web-02"; do
         get_dns_record "$sub"
