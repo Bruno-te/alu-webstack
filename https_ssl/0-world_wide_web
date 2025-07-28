@@ -1,15 +1,34 @@
 #!/usr/bin/env bash
-# print domains and subdomains
-print_domain_subdomain () {
-    dig "$1" | grep -A1 'ANSWER SECTION:' | sed -r "s/$1./$2/g" | awk -F" " ' NR==2 { print "The subdomain " $1 " is a " $4 " record and points to " $5 }'
+# Ignore SC2086 (safe here)
+# shellcheck disable=SC2086
+
+# Default domain (you can override by passing a different one)
+DEFAULT_DOMAIN="top-bruno.tech"
+DOMAIN=${1:-$DEFAULT_DOMAIN}
+SUB=$2
+
+# Function to get subdomain info
+get_subdomain_info() {
+    local full_domain=$1
+    local sub=$2
+    local fqdn="${sub}.${full_domain}"
+    local record=$(dig ${fqdn} +short)
+    local type=$(dig ${fqdn} | awk '/IN/ && !/;/ {print $4}' | head -n1)
+    
+    if [[ -n "$record" ]]; then
+        echo "The subdomain ${sub} is a ${type} record and points to ${record}"
+    else
+        echo "The subdomain ${sub} does not resolve or is not set"
+    fi
 }
 
-if [ "$#" -eq 2 ]
-then
-    print_domain_subdomain "$2.$1" "$2"
+# Main logic
+if [[ -z "$SUB" ]]; then
+    # Default subdomains to check
+    for sub in www lb-01 web-01 web-02; do
+        get_subdomain_info $DOMAIN $sub
+    done
 else
-    print_domain_subdomain "www.$1" "www"
-    print_domain_subdomain "lb-01.$1" "lb-01"
-    print_domain_subdomain "web-01.$1" "web-01"
-    print_domain_subdomain "web-02.$1" "web-02"
+    get_subdomain_info $DOMAIN $SUB
 fi
+
