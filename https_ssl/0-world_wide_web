@@ -1,38 +1,33 @@
 #!/usr/bin/env bash
 # script to configure subdomains and display information about them.
 
-domain=$1
-subdomain=$2
+# Default domain (you can override by passing a different one)
+DEFAULT_DOMAIN="top-bruno.tech"
+DOMAIN=${1:-$DEFAULT_DOMAIN}
+SUB=$2
 
-declare -A subdomains
-subdomains=(
-    ["www"]="18.212.185.206"
-    ["lb-01"]="18.212.185.206"
-    ["web-01"]="184.73.69.127"
-    ["web-02"]="3.88.234.125"
-)
-
-get_dns_record() {
-    local sub=$1
-    local fqdn="www.top-bruno.tech"
-    local record_info=$(dig +short $fqdn)
+# Function to get subdomain info
+get_subdomain_info() {
+    local full_domain=$1
+    local sub=$2
+    local fqdn="${sub}.${full_domain}"
+    local record=$(dig ${fqdn} +short)
+    local type=$(dig ${fqdn} | awk '/IN/ && !/;/ {print $4}' | head -n1)
     
-    if [[ -n "$record_info" ]]; then
-        echo "The subdomain $sub is a A record and points to $record_info"
+    if [[ -n "$record" ]]; then
+        echo "The subdomain ${sub} is a ${type} record and points to ${record}"
     else
-        echo "No DNS record found for $fqdn"
+        echo "The subdomain ${sub} does not resolve or is not set"
     fi
 }
 
-if [[ -z "$domain" ]]; then
-    echo "Usage: $0 top-bruno.tech [www.top-bruno.tech]"
-    exit 1
+# Main logic
+if [[ -z "$SUB" ]]; then
+    # Default subdomains to check
+    for sub in www lb-01 web-01 web-02; do
+        get_subdomain_info $DOMAIN $sub
+    done
+else
+    get_subdomain_info $DOMAIN $SUB
 fi
 
-if [[ -n "$subdomain" ]]; then
-    get_dns_record "www.top-bruno.tech"
-else
-    for sub in "www" "lb-01" "web-01" "web-02"; do
-        get_dns_record "$sub"
-    done
-fi
