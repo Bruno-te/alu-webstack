@@ -1,38 +1,32 @@
-#!/usr/bin/env bash
-# script to configure subdomains and display information about them.
+#!/bin/bash
 
-domain=$1
-subdomain=$2
-
-declare -A subdomains
-subdomains=(
-    ["www"]="lb-01-IP"
-    ["lb-01"]="lb-01-IP"
-    ["web-01"]="web-01-IP"
-    ["web-02"]="web-02-IP"
-)
-
-get_dns_record() {
-    local sub=$1
-    local fqdn="$sub.$domain"
-    local record_info=$(dig +short $fqdn)
-    
-    if [[ -n "$record_info" ]]; then
-        echo "The subdomain $sub is a A record and points to $record_info"
+print_subdomain_info() {
+    local subdomain=$1
+    local domain=$2
+    result=$(dig +short A "${subdomain}.${domain}")
+    if [ -n "$result" ]; then
+        echo "The subdomain $subdomain is a A record and points to $result"
     else
-        echo "No DNS record found for $fqdn"
+        echo "The subdomain $subdomain has no A record."
     fi
 }
 
-if [[ -z "$domain" ]]; then
-    echo "Usage: $0 <domain> [subdomain]"
-    exit 1
-fi
+main() {
+    local domain=$1
+    local subdomain=$2
 
-if [[ -n "$subdomain" ]]; then
-    get_dns_record "$subdomain"
-else
-    for sub in "www" "lb-01" "web-01" "web-02"; do
-        get_dns_record "$sub"
-    done
-fi
+    if [ -z "$domain" ]; then
+        echo "Usage: $0 <domain> [subdomain]"
+        exit 1
+    fi
+
+    if [ -n "$subdomain" ]; then
+        print_subdomain_info "$subdomain" "$domain"
+    else
+        for s in www lb-01 web-01 web-02; do
+            print_subdomain_info "$s" "$domain"
+        done
+    fi
+}
+
+main "$@"
