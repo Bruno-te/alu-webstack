@@ -1,32 +1,29 @@
 #!/usr/bin/env bash
+# This script retrieves and displays A records for subdomains of a domain
 
+# Function to display subdomain information
 print_subdomain_info() {
-    local subdomain=$1
-    local domain=$2
-    result=$(dig +short A "${subdomain}.${domain}")
-    if [ -n "$result" ]; then
-        echo "The subdomain $subdomain is a A record and points to $result"
-    else
-        echo "The subdomain $subdomain has no A record."
-    fi
-}
-
-main() {
     local domain=$1
     local subdomain=$2
-
-    if [ -z "$domain" ]; then
-        echo "Usage: $0 <domain> [subdomain]"
-        exit 1
-    fi
-
-    if [ -n "$subdomain" ]; then
-        print_subdomain_info "$subdomain" "$domain"
-    else
-        for s in www lb-01 web-01 web-02; do
-            print_subdomain_info "$s" "$domain"
-        done
+    ip_info=$(dig "${subdomain}.${domain}" +short | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -n 1)
+    if [ -n "$ip_info" ]; then
+        echo "The subdomain ${subdomain} is a A record and points to ${ip_info}"
     fi
 }
 
-main "$@"
+# Main logic
+domain=$1
+subdomain=$2
+
+if [ -z "$domain" ]; then
+    echo "Usage: $0 domain [subdomain]"
+    exit 1
+fi
+
+if [ -z "$subdomain" ]; then
+    for sub in www lb-01 web-01 web-02; do
+        print_subdomain_info "$domain" "$sub"
+    done
+else
+    print_subdomain_info "$domain" "$subdomain"
+fi
